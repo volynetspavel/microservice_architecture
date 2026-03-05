@@ -2,20 +2,74 @@ services:
   resource-db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: resource-db
-      POSTGRES_USER: postgres  # Default, can be omitted if unchanged
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${RESOURCE_DATABASE_NAME}
+      POSTGRES_USER: ${RESOURCE_DATASOURCE_USERNAME}
+      POSTGRES_PASSWORD: ${RESOURCE_DATASOURCE_PASSWORD}
     ports:
       - "5432:5432"  # Maps container port 5432 to host port 5432
+    networks:
+      - resource-network      
+    volumes:
+      - ./init-scripts/resource-db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   song-db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: song-db
-      POSTGRES_USER: postgres  # Default, can be omitted if unchanged
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${SONG_DATABASE_NAME}
+      POSTGRES_USER: ${SONG_DATASOURCE_USERNAME}
+      POSTGRES_PASSWORD: ${SONG_DATASOURCE_PASSWORD}
     ports:
       - "5433:5432"  # Maps container port 5432 to host port 5433 (to avoid conflict)
+    networks:
+      - song-network      
+    volumes:
+      - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql      
+
+  resource-service:
+    build:
+      context: ./resource-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: ${RESOURCE_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${RESOURCE_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${RESOURCE_DATASOURCE_PASSWORD}
+      SONG_SERVICE_URL: ${SONG_SERVICE_URL}
+    networks:
+      - resource-network
+      - resource-song-network
+    depends_on:
+      - resource-db
+      - song-service
+
+  song-service:
+    build:
+      context: ./song-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: ${SONG_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SONG_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SONG_DATASOURCE_PASSWORD}
+    networks:
+      - song-network
+      - resource-song-network
+    depends_on:
+      - song-db
+      
+networks:
+  resource-network:
+    name: resource-network
+    driver: bridge  
+  song-network:
+    name: song-network
+    driver: bridge 
+  resource-song-network:
+    name: resource-song-network
+    driver: bridge   
+    
 
 # Related settings for application.properties:
 # 
