@@ -39,6 +39,7 @@ services:
     networks:
       - resource-network
       - resource-song-network
+      - eureka-server-network
     depends_on:
       - resource-db
       - song-service
@@ -56,9 +57,19 @@ services:
     networks:
       - song-network
       - resource-song-network
+      - eureka-server-network
     depends_on:
       - song-db
-      
+
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    networks:
+      - eureka-server-network
+
 networks:
   resource-network:
     name: resource-network
@@ -68,8 +79,11 @@ networks:
     driver: bridge 
   resource-song-network:
     name: resource-song-network
-    driver: bridge   
-    
+    driver: bridge
+  eureka-server-network:
+    name: eureka-server
+    driver: bridge
+
 
 # Related settings for application.properties:
 # 

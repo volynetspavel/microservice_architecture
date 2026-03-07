@@ -1,16 +1,19 @@
+rem --build images:
+docker build -t resource-service:1.0 .
+docker build -t song-service:1.0 .
+docker build -t eureka-server:1.0 .
+
 rem --run containers from compose.yaml
 docker compose up -d
 docker compose up -d --build
 rem --run specific services from compose.yaml
 docker compose up -d resource-db song-db
-
-rem --build images: 
-docker build -t resource-service:1.0 .
-docker build -t song-service:1.0 .
+docker compose up -d eureka-server
 
 rem --run container
 docker run -d --name resource-service -p 8081:8081 resource-service:1.0
 docker run -d --name song-service -p 8082:8082 song-service:1.0
+docker run -d --name eureka-server -p 8761:8761 eureka-server:1.0
 
 rem --run container with network, use this
 docker run -d --name resource-service --net=microservice_architecture_overview_resource-network -p 8081:8081 resource-service:1.0
@@ -25,3 +28,6 @@ docker stop microservice_architecture_overview-resource-db-1
 docker stop microservice_architecture_overview-song-db-1
 docker stop resource-service
 docker stop song-service
+
+rem --Before running the application in Docker, stop any previously running containers
+docker compose down
