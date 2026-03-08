@@ -1,11 +1,13 @@
 package com.microservice.resource.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,13 +17,15 @@ import java.util.Map;
 @Service
 public class SongServiceClient {
 
-    private final RestTemplate restTemplate;
+    private static final String SONG_SERVICE = "song-service";
+    private static final String SONGS_URL = "/songs";
 
-    @Value("${song-service.url}")
-    private String songServiceUrl;
+    private final DiscoveryClient discoveryClient;
+    private final RestClient restClient;
 
-    public SongServiceClient(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    public SongServiceClient(DiscoveryClient discoveryClient, RestClient.Builder restClientBuilder) {
+        this.discoveryClient = discoveryClient;
+        this.restClient = restClientBuilder.build();
     }
 
     /**
@@ -30,11 +34,15 @@ public class SongServiceClient {
      * @param metadata Map of extracted metadata.
      */
     public void sendMetadata(Map<String, String> metadata) {
-        try {
-            String url = songServiceUrl + "/songs";
+        ServiceInstance instance = getServiceInstance();
 
-            restTemplate.postForObject(url, metadata, Void.class);
-            log.info("Metadata successfully sent to Song Service");
+        try {
+            String metadataId = restClient.post()
+                    .uri(instance.getUri() + SONGS_URL)
+                    .body(metadata)
+                    .retrieve()
+                    .body(String.class);
+            log.info("Metadata with ID={} successfully created in Song Service", metadataId);
         } catch (RestClientException e) {
             log.error("Failed to send metadata to Song Service: {}", e.getMessage());
         }
@@ -46,14 +54,26 @@ public class SongServiceClient {
      * @param id The ID of the metadata to delete.
      */
     public void deleteMetadata(Integer id) {
+        ServiceInstance instance = getServiceInstance();
         try {
-            String url = songServiceUrl + "/songs?id=" + id;
-
-            restTemplate.delete(url);
-            log.info("Metadata with ID={} successfully deleted from Song Service", id);
+            String metadataId = restClient.delete()
+                    .uri(instance.getUri() + SONGS_URL + "?id=" + id)
+                    .retrieve()
+                    .body(String.class);
+            log.info("Metadata with ID={} successfully deleted from Song Service", metadataId);
         } catch (RestClientException e) {
             log.error("Failed to delete metadata from Song Service: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Retrieves a ServiceInstance for the Song Service from Eureka.
+     */
+    private ServiceInstance getServiceInstance() {
+        List<ServiceInstance> instances = discoveryClient.getInstances(SONG_SERVICE);
+        return instances.stream()
+                .findFirst()
+                .orElseThrow(() -> new RestClientException("Song Service instance not found"));
     }
 }
 
