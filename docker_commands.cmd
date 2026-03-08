@@ -5,7 +5,10 @@ docker build -t eureka-server:1.0 .
 
 rem --run containers from compose.yaml
 docker compose up -d
+rem --build and run containers from compose.yaml
 docker compose up -d --build
+rem --build and run containers from compose.yaml and run 2 song-service containers
+docker compose up -d --build --scale song-service=2
 rem --run specific services from compose.yaml
 docker compose up -d resource-db song-db
 docker compose up -d eureka-server
