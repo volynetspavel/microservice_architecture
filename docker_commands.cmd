@@ -35,3 +35,6 @@ docker stop song-service
 
 rem --Before running the application in Docker, stop any previously running containers
 docker compose down
+
+rem --remove unused images
+docker image prune

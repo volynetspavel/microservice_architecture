@@ -29,6 +29,7 @@ services:
     build:
       context: ./resource-service
       dockerfile: Dockerfile
+    image: resource-service:1.0
     ports:
       - "8081:8081"
     environment:
@@ -48,8 +49,11 @@ services:
     build:
       context: ./song-service
       dockerfile: Dockerfile
+    image: song-service:1.0
+    deploy:
+        replicas: 2
     ports:
-      - "8082:8082"
+      - "8082-8083:8082"
     environment:
       SPRING_DATASOURCE_URL: ${SONG_DATASOURCE_URL}
       SPRING_DATASOURCE_USERNAME: ${SONG_DATASOURCE_USERNAME}
@@ -66,6 +70,7 @@ services:
     build:
       context: ./eureka-server
       dockerfile: Dockerfile
+    image: eureka-server:1.0
     ports:
       - "8761:8761"
     networks:
