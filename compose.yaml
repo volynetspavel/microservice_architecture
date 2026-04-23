@@ -37,13 +37,14 @@ services:
       SPRING_DATASOURCE_USERNAME: ${RESOURCE_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${RESOURCE_DATASOURCE_PASSWORD}
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      LOCALSTACK_SERVER_URL: ${LOCALSTACK_SERVER_URL}
     networks:
       - resource-network
-      - resource-song-network
-      - eureka-server-network
+#      - resource-song-network
+#      - eureka-server-network
     depends_on:
       - resource-db
-      - song-service
+#      - song-service
 
   song-service:
     build:
@@ -85,6 +86,8 @@ services:
       - SERVICES=s3
       - DEBUG=1
       - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+    networks:
+      - resource-network
 
 networks:
   resource-network:
