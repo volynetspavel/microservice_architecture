@@ -8,7 +8,7 @@ services:
     ports:
       - "5432:5432"  # Maps container port 5432 to host port 5432
     networks:
-      - resource-network      
+      - resource-network
     volumes:
       - ./init-scripts/resource-db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
@@ -21,9 +21,9 @@ services:
     ports:
       - "5433:5432"  # Maps container port 5432 to host port 5433 (to avoid conflict)
     networks:
-      - song-network      
+      - song-network
     volumes:
-      - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql      
+      - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   resource-service:
     build:
@@ -51,7 +51,7 @@ services:
       dockerfile: Dockerfile
     image: song-service:1.0
     deploy:
-        replicas: 2
+      replicas: 2
     ports:
       - "8082-8083:8082"
     environment:
@@ -76,13 +76,23 @@ services:
     networks:
       - eureka-server-network
 
+  localstack:
+    image: localstack/localstack:latest
+    container_name: "localstack"
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+
 networks:
   resource-network:
     name: resource-network
-    driver: bridge  
+    driver: bridge
   song-network:
     name: song-network
-    driver: bridge 
+    driver: bridge
   resource-song-network:
     name: resource-song-network
     driver: bridge
@@ -91,14 +101,3 @@ networks:
     driver: bridge
 
 
-# Related settings for application.properties:
-# 
-# For resource-service:
-# spring.datasource.url=jdbc:postgresql://localhost:5432/resource-db
-# spring.datasource.username=postgres
-# spring.datasource.password=postgres
-#
-# For song-service:
-# spring.datasource.url=jdbc:postgresql://localhost:5433/song-db
-# spring.datasource.username=postgres
-# spring.datasource.password=postgres
