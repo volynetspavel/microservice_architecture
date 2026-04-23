@@ -1,5 +1,6 @@
 rem --build images:
 docker build -t resource-service:1.0 .
+docker build -t resource-processor:1.0 .
 docker build -t song-service:1.0 .
 docker build -t eureka-server:1.0 .
 
@@ -16,6 +17,7 @@ docker compose up -d eureka-server
 rem just containers for resource-service
 docker compose up -d resource-db
 docker compose up -d resource-service
+docker compose up -d resource-processor
 docker compose up -d localstack
 
 rem --run container

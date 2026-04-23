@@ -67,6 +67,20 @@ services:
     depends_on:
       - song-db
 
+  resource-processor:
+    build:
+      context: ./resource-processor
+      dockerfile: Dockerfile
+    image: resource-processor:1.0
+    ports:
+      - "8083:8083"
+    environment:
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+    networks:
+      - resource-network
+#    depends_on:
+#      - resource-service
+
   eureka-server:
     build:
       context: ./eureka-server
