@@ -20,10 +20,10 @@ public class Resource {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(name = "audio_data", nullable = false, columnDefinition = "BYTEA")
-    private byte[] audioData;
+    @Column(name = "file_location", nullable = false)
+    private String fileLocation;
 
-    public Resource(byte[] audioData) {
-        this.audioData = audioData;
+    public Resource(String fileLocation) {
+        this.fileLocation = fileLocation;
     }
 }

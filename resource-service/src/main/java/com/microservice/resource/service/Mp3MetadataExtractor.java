@@ -1,15 +1,17 @@
 package com.microservice.resource.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mp3.Mp3Parser;
 import org.springframework.stereotype.Component;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,6 +23,17 @@ import java.util.Map;
 @Component
 public class Mp3MetadataExtractor {
 
+    private final Metadata metadata;
+    private final ContentHandler handler;
+    private final ParseContext context;
+    private final Mp3Parser parser;
+
+    public Mp3MetadataExtractor() {
+        this.metadata = new Metadata();
+        this.handler = new DefaultHandler();
+        this.context = new ParseContext();
+        this.parser = new Mp3Parser();
+    }
 
     /**
      * Extracts metadata from MP3 audio data.
@@ -33,12 +46,7 @@ public class Mp3MetadataExtractor {
         Map<String, String> extractedMetadata = new HashMap<>();
 
         try {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new DefaultHandler();
-            ParseContext context = new ParseContext();
-
             // Parse MP3 file using Tika
-            Mp3Parser parser = new Mp3Parser();
             ByteArrayInputStream stream = new ByteArrayInputStream(audioData);
             parser.parse(stream, handler, metadata, context);
 
@@ -60,10 +68,28 @@ public class Mp3MetadataExtractor {
     }
 
     /**
+     * Gets metadata value from MP3 audio data by certain key
+     * @param audioData Binary MP3 data.
+     * @param key Metadata key.
+     * @param defaultValue Default value if key not found.
+     * @return Metadata value or default.
+     */
+    public String getMetadataValue(byte[] audioData, String key, String defaultValue) {
+        ByteArrayInputStream stream = new ByteArrayInputStream(audioData);
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } catch (Exception e) {
+            log.error("Failed to extract metadata {} from MP3 file: {}", key, e.getMessage());
+            return defaultValue;
+        }
+        return getMetadataValue(metadata, key, defaultValue);
+    }
+
+    /**
      * Gets metadata value from Tika Metadata object with fallback.
      *
-     * @param metadata Tika Metadata object.
-     * @param key Metadata key.
+     * @param metadata     Tika Metadata object.
+     * @param key          Metadata key.
      * @param defaultValue Default value if key not found.
      * @return Metadata value or default.
      */
@@ -74,6 +100,7 @@ public class Mp3MetadataExtractor {
 
     /**
      * Converts duration from seconds to MM:SS, with leading zeros.
+     *
      * @param durationSeconds Duration in seconds as a string.
      * @return Formatted duration string or null if input is invalid.
      */

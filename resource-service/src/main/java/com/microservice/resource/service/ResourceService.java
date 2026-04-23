@@ -23,13 +23,16 @@ public class ResourceService {
     private final ResourceRepository repository;
     private final Mp3MetadataExtractor metadataExtractor;
     private final SongServiceClient songServiceClient;
+    private final CloudStorageService cloudStorageService;
 
     public ResourceService(ResourceRepository repository,
                            Mp3MetadataExtractor metadataExtractor,
-                           SongServiceClient songServiceClient) {
+                           SongServiceClient songServiceClient,
+                           CloudStorageService cloudStorageService) {
         this.repository = repository;
         this.metadataExtractor = metadataExtractor;
         this.songServiceClient = songServiceClient;
+        this.cloudStorageService = cloudStorageService;
     }
 
     /**
@@ -43,14 +46,17 @@ public class ResourceService {
             throw new InvalidRequestException("MP3 file is empty");
         }
 
-        // Save resource to database
-        Resource resource = repository.save(new Resource(audioData));
-
         // Extract metadata from MP3 file
-        Map<String, String> metadata = metadataExtractor.extractMetadata(resource.getId(), audioData);
+        String title = metadataExtractor.getMetadataValue(audioData, "dc:title", "Unknown");
+        String fileLocation = "songs/" + title  + ".mp3";
+
+        cloudStorageService.uploadAudioFile(fileLocation, audioData);
+
+        // Save resource to database
+        Resource resource = repository.save(new Resource(fileLocation));
 
         // Send metadata to Song Service
-        songServiceClient.sendMetadata(metadata);
+//        songServiceClient.sendMetadata(metadata);
         return new ResourceIdResponseDto(resource.getId());
     }
 
@@ -62,9 +68,11 @@ public class ResourceService {
      */
     public ResourceDataResponseDto getResourceById(String id) {
         int validatedId = validateResourceId(id);
-        return repository.findById(validatedId)
-                .map(resource -> new ResourceDataResponseDto(resource.getAudioData()))
+        Resource resource = repository.findById(validatedId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource with ID=" + id + " not found"));
+
+        byte[] audioData = cloudStorageService.downloadFile(resource.getFileLocation());
+        return new ResourceDataResponseDto(audioData);
     }
 
     /**

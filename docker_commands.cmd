@@ -13,6 +13,10 @@ rem --run specific services from compose.yaml
 docker compose up -d resource-db song-db
 docker compose up -d resource-db song-db eureka-server
 docker compose up -d eureka-server
+rem just containers for resource-service
+docker compose up -d resource-db
+docker compose up -d resource-service
+docker compose up -d localstack
 
 rem --run container
 docker run -d --name resource-service -p 8081:8081 resource-service:1.0
