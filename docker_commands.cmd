@@ -16,9 +16,10 @@ docker compose up -d resource-db song-db eureka-server
 docker compose up -d eureka-server
 rem just containers for resource-service
 docker compose up -d resource-db
-docker compose up -d resource-service
 docker compose up -d resource-processor
 docker compose up -d localstack
+rem you can run only resource-service and it will trigger dependency services to run as well
+docker compose up -d resource-service
 
 rem --run container
 docker run -d --name resource-service -p 8081:8081 resource-service:1.0
@@ -33,6 +34,9 @@ rem --connect to network between resource-service and song-service
 docker network connect microservice_architecture_overview_default resource-service
 docker network connect microservice_architecture_overview_default song-service
 
+rem -- docker port <container_id> to check which ports are mapped to the container
+docker port 6c1f109e40f0
+
 rem --stop containers
 docker stop microservice_architecture_overview-resource-db-1
 docker stop microservice_architecture_overview-song-db-1
@@ -44,3 +48,6 @@ docker compose down
 
 rem --remove unused images, -a flag removes all images without at least one container associated to them
 docker image prune -a
+
+rem --check running containers
+docker ps

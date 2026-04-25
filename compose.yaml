@@ -40,11 +40,13 @@ services:
       LOCALSTACK_SERVER_URL: ${LOCALSTACK_SERVER_URL}
     networks:
       - resource-network
-#      - resource-song-network
-#      - eureka-server-network
+      - resource-song-network
+      - eureka-server-network
     depends_on:
+      - eureka-server
+      - localstack
       - resource-db
-#      - song-service
+      - song-service
 
   song-service:
     build:

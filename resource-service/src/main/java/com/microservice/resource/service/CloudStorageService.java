@@ -20,8 +20,7 @@ public class CloudStorageService {
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
-    @Value("${aws.s3.endpoint}")
-    private String endpoint;
+    private final String songBucketFolder = "songs/";
 
     public CloudStorageService(S3Client s3Client) {
         this.s3Client = s3Client;
@@ -29,10 +28,13 @@ public class CloudStorageService {
 
     /**
      * Uploads an MP3 file to cloud storage.
-     * @param fileLocation The location where the file will be stored in the bucket.
+     *
+     * @param fileName  The name of the file to be stored in the bucket.
      * @param audioData The binary data of the MP3 file.
+     * @return The URL of the uploaded file.
      */
-    public void uploadAudioFile(String fileLocation, byte[] audioData) {
+    public String uploadAudioFile(String fileName, byte[] audioData) {
+        String fileLocation = songBucketFolder + fileName;
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(fileLocation)
@@ -42,8 +44,15 @@ public class CloudStorageService {
         s3Client.putObject(request,
                 software.amazon.awssdk.core.sync.RequestBody.fromByteBuffer(
                         java.nio.ByteBuffer.wrap(audioData)));
+        return fileLocation;
     }
 
+    /**
+     * Downloads an MP3 file from cloud storage.
+     *
+     * @param fileLocation The location of the file in the bucket.
+     * @return The binary data of the MP3 file.
+     */
     public byte[] downloadFile(String fileLocation) {
         GetObjectRequest request = GetObjectRequest.builder()
                 .bucket(bucketName)
@@ -57,6 +66,11 @@ public class CloudStorageService {
         }
     }
 
+    /**
+     * Deletes an MP3 file from cloud storage.
+     *
+     * @param fileLocation The location of the file in the bucket to be deleted.
+     */
     public void deleteFile(String fileLocation) {
         DeleteObjectRequest request = DeleteObjectRequest.builder()
                 .bucket(bucketName)
@@ -64,9 +78,5 @@ public class CloudStorageService {
                 .build();
 
         s3Client.deleteObject(request);
-    }
-
-    public String getFileUrl(String fileLocation) {
-        return endpoint + "/" + bucketName + "/" + fileLocation;
     }
 }

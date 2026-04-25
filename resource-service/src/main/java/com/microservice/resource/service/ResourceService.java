@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Service for handling MP3 resource CRUD operations.
@@ -46,17 +45,19 @@ public class ResourceService {
             throw new InvalidRequestException("MP3 file is empty");
         }
 
+        //save resource to database to get generated ID
+        Resource resource = repository.save(new Resource(""));
+
         // Extract metadata from MP3 file
         String title = metadataExtractor.getMetadataValue(audioData, "dc:title", "Unknown");
-        String fileLocation = "songs/" + title  + ".mp3";
+        String fileName = resource.getId() + "_" + title + ".mp3";
 
-        cloudStorageService.uploadAudioFile(fileLocation, audioData);
-
+        String fileLocation = cloudStorageService.uploadAudioFile(fileName, audioData);
         // Save resource to database
-        Resource resource = repository.save(new Resource(fileLocation));
+        resource.setFileLocation(fileLocation);
+        // Update resource with correct file location
+        repository.save(resource);
 
-        // Send metadata to Song Service
-//        songServiceClient.sendMetadata(metadata);
         return new ResourceIdResponseDto(resource.getId());
     }
 
@@ -88,8 +89,13 @@ public class ResourceService {
         List<Integer> deletedIds = new ArrayList<>();
         for (Integer id : ids) {
             if (repository.existsById(id)) {
+                Resource resource = repository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("Resource with ID=" + id + " not found"));
+
+                cloudStorageService.deleteFile(resource.getFileLocation());
                 repository.deleteById(id);
                 songServiceClient.deleteMetadata(id);
+
                 deletedIds.add(id);
             }
         }
