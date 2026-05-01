@@ -18,8 +18,12 @@ rem just containers for resource-service
 docker compose up -d resource-db
 docker compose up -d resource-processor
 docker compose up -d localstack
+docker compose up -d rabbitmq
 rem you can run only resource-service and it will trigger dependency services to run as well
 docker compose up -d resource-service
+
+rem --restart containers
+docker compose restart rabbitmq
 
 rem --run container
 docker run -d --name resource-service -p 8081:8081 resource-service:1.0

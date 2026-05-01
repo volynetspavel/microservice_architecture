@@ -42,6 +42,7 @@ services:
       - resource-network
       - resource-song-network
       - eureka-server-network
+      - rabbitmq-network
     depends_on:
       - eureka-server
       - localstack
@@ -75,13 +76,15 @@ services:
       dockerfile: Dockerfile
     image: resource-processor:1.0
     ports:
-      - "8083:8083"
+      - "8084:8084"
     environment:
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
     networks:
-      - resource-network
-#    depends_on:
-#      - resource-service
+      - resource-song-network
+      - rabbitmq-network
+    depends_on:
+      - resource-service
+      - song-service
 
   eureka-server:
     build:
@@ -104,6 +107,17 @@ services:
     networks:
       - resource-network
 
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"    # Broker (AMQP) port
+      - "15672:15672"  # Management Web UI port (for you to monitor in browser)
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    networks:
+      - rabbitmq-network
+
 networks:
   resource-network:
     name: resource-network
@@ -116,6 +130,9 @@ networks:
     driver: bridge
   eureka-server-network:
     name: eureka-server
+    driver: bridge
+  rabbitmq-network:
+    name: rabbitmq-network
     driver: bridge
 
 
