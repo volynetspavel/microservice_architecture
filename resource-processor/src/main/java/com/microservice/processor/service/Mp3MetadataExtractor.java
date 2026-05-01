@@ -1,4 +1,4 @@
-package com.microservice.resource.service;
+package com.microservice.processor.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.metadata.Metadata;

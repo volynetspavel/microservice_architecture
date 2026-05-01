@@ -8,7 +8,7 @@ services:
     ports:
       - "5432:5432"  # Maps container port 5432 to host port 5432
     networks:
-      - resource-network      
+      - resource-network
     volumes:
       - ./init-scripts/resource-db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
@@ -21,9 +21,9 @@ services:
     ports:
       - "5433:5432"  # Maps container port 5432 to host port 5433 (to avoid conflict)
     networks:
-      - song-network      
+      - song-network
     volumes:
-      - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql      
+      - ./init-scripts/song-db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   resource-service:
     build:
@@ -37,11 +37,14 @@ services:
       SPRING_DATASOURCE_USERNAME: ${RESOURCE_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${RESOURCE_DATASOURCE_PASSWORD}
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      LOCALSTACK_SERVER_URL: ${LOCALSTACK_SERVER_URL}
     networks:
       - resource-network
       - resource-song-network
       - eureka-server-network
     depends_on:
+      - eureka-server
+      - localstack
       - resource-db
       - song-service
 
@@ -51,7 +54,7 @@ services:
       dockerfile: Dockerfile
     image: song-service:1.0
     deploy:
-        replicas: 2
+      replicas: 2
     ports:
       - "8082-8083:8082"
     environment:
@@ -66,6 +69,20 @@ services:
     depends_on:
       - song-db
 
+  resource-processor:
+    build:
+      context: ./resource-processor
+      dockerfile: Dockerfile
+    image: resource-processor:1.0
+    ports:
+      - "8083:8083"
+    environment:
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+    networks:
+      - resource-network
+#    depends_on:
+#      - resource-service
+
   eureka-server:
     build:
       context: ./eureka-server
@@ -76,13 +93,24 @@ services:
     networks:
       - eureka-server-network
 
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+    networks:
+      - resource-network
+
 networks:
   resource-network:
     name: resource-network
-    driver: bridge  
+    driver: bridge
   song-network:
     name: song-network
-    driver: bridge 
+    driver: bridge
   resource-song-network:
     name: resource-song-network
     driver: bridge
@@ -91,14 +119,3 @@ networks:
     driver: bridge
 
 
-# Related settings for application.properties:
-# 
-# For resource-service:
-# spring.datasource.url=jdbc:postgresql://localhost:5432/resource-db
-# spring.datasource.username=postgres
-# spring.datasource.password=postgres
-#
-# For song-service:
-# spring.datasource.url=jdbc:postgresql://localhost:5433/song-db
-# spring.datasource.username=postgres
-# spring.datasource.password=postgres
