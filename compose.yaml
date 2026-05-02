@@ -38,6 +38,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${RESOURCE_DATASOURCE_PASSWORD}
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
       LOCALSTACK_SERVER_URL: ${LOCALSTACK_SERVER_URL}
+      LOCALSTACK_S3_BUCKET_NAME: ${LOCALSTACK_S3_BUCKET_NAME}
     networks:
       - resource-network
       - resource-song-network
@@ -101,9 +102,14 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=s3
-      - DEBUG=1
-      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+      SERVICES: s3
+      DEBUG: 1
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN}
+      INIT_SCRIPTS: /etc/localstack/init-scripts
+      LOCALSTACK_S3_BUCKET_NAME: ${LOCALSTACK_S3_BUCKET_NAME}
+#      LOCALSTACK_PREINVOKE_COMMANDS: sh /etc/localstack/init-scripts/init_s3_bucket.sh
+    volumes:
+        - ./init-scripts/localstack:/etc/localstack/init-scripts
     networks:
       - resource-network
 
