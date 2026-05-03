@@ -105,11 +105,9 @@ services:
       SERVICES: s3
       DEBUG: 1
       LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN}
-      INIT_SCRIPTS: /etc/localstack/init-scripts
       LOCALSTACK_S3_BUCKET_NAME: ${LOCALSTACK_S3_BUCKET_NAME}
-#      LOCALSTACK_PREINVOKE_COMMANDS: sh /etc/localstack/init-scripts/init_s3_bucket.sh
     volumes:
-        - ./init-scripts/localstack:/etc/localstack/init-scripts
+        - ./init-scripts/localstack/init_s3_bucket.sh:/etc/localstack/init/ready.d/init_s3_bucket.sh  # This script will be executed when LocalStack is ready
     networks:
       - resource-network
 
