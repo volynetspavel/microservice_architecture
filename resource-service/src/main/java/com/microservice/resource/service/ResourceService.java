@@ -24,13 +24,16 @@ public class ResourceService {
     private final ResourceRepository repository;
     private final SongServiceClient songServiceClient;
     private final CloudStorageService cloudStorageService;
+    private final ResourceUploadedEventPublisher eventPublisher;
 
     public ResourceService(ResourceRepository repository,
                            SongServiceClient songServiceClient,
-                           CloudStorageService cloudStorageService) {
+                           CloudStorageService cloudStorageService,
+                           ResourceUploadedEventPublisher eventPublisher) {
         this.repository = repository;
         this.songServiceClient = songServiceClient;
         this.cloudStorageService = cloudStorageService;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -62,6 +65,8 @@ public class ResourceService {
         resource.setFileLocation(fileLocation);
         // Update resource with correct audioFile location
         repository.save(resource);
+
+        eventPublisher.publish(resource.getId());
 
         return new ResourceIdResponseDto(resource.getId());
     }

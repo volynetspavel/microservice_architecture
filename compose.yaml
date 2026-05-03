@@ -39,15 +39,19 @@ services:
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
       LOCALSTACK_SERVER_URL: ${LOCALSTACK_SERVER_URL}
       LOCALSTACK_S3_BUCKET_NAME: ${LOCALSTACK_S3_BUCKET_NAME}
+      RABBITMQ_SERVER_URL: ${RABBITMQ_SERVER_URL}
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
     networks:
       - resource-network
       - resource-song-network
       - eureka-server-network
       - rabbitmq-network
     depends_on:
+      - resource-db
       - eureka-server
       - localstack
-      - resource-db
+      - rabbitmq
       - song-service
 
   song-service:

@@ -22,6 +22,12 @@ docker compose up -d rabbitmq
 rem you can run only resource-service and it will trigger dependency services to run as well
 docker compose up -d resource-service
 
+rem --go into container
+docker exec -it 5b71c610f633f4f78722d6cd230153b1d018def9651ffad7e009cc850b83ad0c bash
+rem --create s3 bucket
+awslocal s3 mb s3://my-bucket
+docker exec -it 5b71c610f633f4f78722d6cd230153b1d018def9651ffad7e009cc850b83ad0c ls -l /etc/localstack/init-scripts
+
 rem --restart containers
 docker compose restart rabbitmq
 
