@@ -2,8 +2,11 @@ package com.microservice.processor.service;
 
 import com.microservice.processor.dto.SongCreateRequestDto;
 import org.springframework.http.MediaType;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 /**
  * Client for communicating with the Song Service to save MP3 metadata.
@@ -22,6 +25,12 @@ public class SongServiceClient {
         this.restClient = builder.build();
     }
 
+    @Retryable(
+            retryFor = {RestClientException.class, IllegalStateException.class},
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 2000, multiplier = 2, maxDelay = 20000),
+            listeners = "retryLoggingListener"
+    )
     public void sendMetadata(SongCreateRequestDto dto) {
         String baseUrl = eurekaServiceResolver.resolve(SERVICE_NAME);
         restClient.post()

@@ -16,6 +16,7 @@ docker compose up -d resource-db song-db eureka-server
 docker compose up -d eureka-server
 rem just containers for resource-service
 docker compose up -d resource-db
+docker compose up -d song-service
 docker compose up -d resource-processor
 docker compose up -d localstack
 docker compose up -d rabbitmq

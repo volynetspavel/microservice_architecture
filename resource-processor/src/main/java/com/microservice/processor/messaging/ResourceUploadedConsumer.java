@@ -34,12 +34,8 @@ public class ResourceUploadedConsumer implements Consumer<ResourceUploadedEvent>
     public void accept(ResourceUploadedEvent event) {
         int resourceId = event.getResourceId();
         log.info("Received resource-uploaded event for resource id {}", resourceId);
-        try {
-            byte[] audioData = resourceServiceClient.getResource(resourceId);
-            songServiceClient.sendMetadata(mp3MetadataExtractor.extractMetadata(resourceId, audioData));
-            log.info("Song metadata saved for resource id {}", resourceId);
-        } catch (Exception e) {
-            log.error("Failed to process resource id {}: {}", resourceId, e.getMessage());
-        }
+        byte[] audioData = resourceServiceClient.getResource(resourceId);
+        songServiceClient.sendMetadata(mp3MetadataExtractor.extractMetadata(resourceId, audioData));
+        log.info("Song metadata saved for resource id {}", resourceId);
     }
 }
