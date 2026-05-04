@@ -53,6 +53,7 @@ services:
       - localstack
       - rabbitmq
       - song-service
+      - resource-processor
 
   song-service:
     build:
@@ -84,12 +85,13 @@ services:
       - "8084:8084"
     environment:
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      RABBITMQ_SERVER_URL: ${RABBITMQ_SERVER_URL}
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
     networks:
       - resource-song-network
       - rabbitmq-network
-    depends_on:
-      - resource-service
-      - song-service
+      - eureka-server-network
 
   eureka-server:
     build:

@@ -18,15 +18,5 @@ public class ProcessorController {
         this.resourceService = resourceService;
     }
 
-    /**
-     * Processes the audio file for the given resource ID and extracts metadata.
-     * @param id The ID of the resource
-     * @param audioData The binary audio data (MP3)
-     * @return ResponseEntity containing the extracted metadatan
-     */
-    @PostMapping(value = "/{id}", consumes = "audio/mpeg", produces = "application/json")
-    public ResponseEntity<AudioMetadataDto> processResource(@PathVariable long id, @RequestBody byte[] audioData) {
-        AudioMetadataDto metadata = resourceService.processResource(id, audioData);
-        return ResponseEntity.status(HttpStatus.OK).body(metadata);
-    }
+
 }
