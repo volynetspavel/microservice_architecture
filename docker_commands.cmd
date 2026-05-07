@@ -16,10 +16,21 @@ docker compose up -d resource-db song-db eureka-server
 docker compose up -d eureka-server
 rem just containers for resource-service
 docker compose up -d resource-db
+docker compose up -d song-service
 docker compose up -d resource-processor
 docker compose up -d localstack
+docker compose up -d rabbitmq
 rem you can run only resource-service and it will trigger dependency services to run as well
 docker compose up -d resource-service
+
+rem --go into container
+docker exec -it 5b71c610f633f4f78722d6cd230153b1d018def9651ffad7e009cc850b83ad0c bash
+rem --create s3 bucket
+awslocal s3 mb s3://my-bucket
+docker exec -it 5b71c610f633f4f78722d6cd230153b1d018def9651ffad7e009cc850b83ad0c ls -l /etc/localstack/init-scripts
+
+rem --restart containers
+docker compose restart rabbitmq
 
 rem --run container
 docker run -d --name resource-service -p 8081:8081 resource-service:1.0

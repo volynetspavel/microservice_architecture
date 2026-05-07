@@ -22,7 +22,6 @@
 
         <lombok.version>1.18.42</lombok.version>
         <postgresql.version>42.7.10</postgresql.version>
-        <tika.version>3.2.3</tika.version>
         <spring-cloud.version>2025.0.1</spring-cloud.version>
         <amazon.s3.version>2.42.36</amazon.s3.version>
         <apache.httpclient.version>4.5.14</apache.httpclient.version>
@@ -39,6 +38,10 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -58,16 +61,6 @@
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tika</groupId>
-            <artifactId>tika-core</artifactId>
-            <version>${tika.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tika</groupId>
-            <artifactId>tika-parsers-standard-package</artifactId>
-            <version>${tika.version}</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>

@@ -8,7 +8,9 @@ import com.microservice.resource.exception.InvalidRequestException;
 import com.microservice.resource.exception.ResourceNotFoundException;
 import com.microservice.resource.repository.ResourceRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,43 +22,51 @@ import java.util.List;
 public class ResourceService {
 
     private final ResourceRepository repository;
-    private final Mp3MetadataExtractor metadataExtractor;
     private final SongServiceClient songServiceClient;
     private final CloudStorageService cloudStorageService;
+    private final ResourceUploadedEventPublisher eventPublisher;
 
     public ResourceService(ResourceRepository repository,
-                           Mp3MetadataExtractor metadataExtractor,
                            SongServiceClient songServiceClient,
-                           CloudStorageService cloudStorageService) {
+                           CloudStorageService cloudStorageService,
+                           ResourceUploadedEventPublisher eventPublisher) {
         this.repository = repository;
-        this.metadataExtractor = metadataExtractor;
         this.songServiceClient = songServiceClient;
         this.cloudStorageService = cloudStorageService;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
-     * Uploads an MP3 file, extracts metadata, and stores it.
+     * Uploads an MP3 audioFile, extracts metadata, and stores it.
      *
-     * @param audioData Binary MP3 data.
+     * @param audioFile MP3 audioFile.
      * @return DTO containing the ID of the created resource.
      */
-    public ResourceIdResponseDto uploadResource(byte[] audioData) {
-        if (audioData == null || audioData.length == 0) {
-            throw new InvalidRequestException("MP3 file is empty");
+    public ResourceIdResponseDto uploadResource(MultipartFile audioFile) {
+        byte[] audioData;
+        String fileName;
+        if (audioFile != null) {
+            try {
+                fileName = audioFile.getOriginalFilename();
+                audioData = audioFile.getBytes();
+            } catch (IOException e) {
+                throw new InvalidRequestException("MP3 audioFile is invalid.");
+            }
+        } else {
+            throw new InvalidRequestException("MP3 audioFile is null.");
         }
 
         //save resource to database to get generated ID
         Resource resource = repository.save(new Resource(""));
 
-        // Extract metadata from MP3 file
-        String title = metadataExtractor.getMetadataValue(audioData, "dc:title", "Unknown");
-        String fileName = resource.getId() + "_" + title + ".mp3";
-
+        fileName = resource.getId() + "_" + fileName;
         String fileLocation = cloudStorageService.uploadAudioFile(fileName, audioData);
         // Save resource to database
         resource.setFileLocation(fileLocation);
-        // Update resource with correct file location
+        // Update resource with correct audioFile location
         repository.save(resource);
+
+        eventPublisher.publish(resource.getId());
 
         return new ResourceIdResponseDto(resource.getId());
     }

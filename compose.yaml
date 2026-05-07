@@ -38,15 +38,22 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${RESOURCE_DATASOURCE_PASSWORD}
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
       LOCALSTACK_SERVER_URL: ${LOCALSTACK_SERVER_URL}
+      LOCALSTACK_S3_BUCKET_NAME: ${LOCALSTACK_S3_BUCKET_NAME}
+      RABBITMQ_SERVER_URL: ${RABBITMQ_SERVER_URL}
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
     networks:
       - resource-network
       - resource-song-network
       - eureka-server-network
+      - rabbitmq-network
     depends_on:
+      - resource-db
       - eureka-server
       - localstack
-      - resource-db
+      - rabbitmq
       - song-service
+      - resource-processor
 
   song-service:
     build:
@@ -75,13 +82,16 @@ services:
       dockerfile: Dockerfile
     image: resource-processor:1.0
     ports:
-      - "8083:8083"
+      - "8084:8084"
     environment:
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      RABBITMQ_SERVER_URL: ${RABBITMQ_SERVER_URL}
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
     networks:
-      - resource-network
-#    depends_on:
-#      - resource-service
+      - resource-song-network
+      - rabbitmq-network
+      - eureka-server-network
 
   eureka-server:
     build:
@@ -98,11 +108,25 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=s3
-      - DEBUG=1
-      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+      SERVICES: s3
+      DEBUG: 1
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN}
+      LOCALSTACK_S3_BUCKET_NAME: ${LOCALSTACK_S3_BUCKET_NAME}
+    volumes:
+        - ./init-scripts/localstack/init_s3_bucket.sh:/etc/localstack/init/ready.d/init_s3_bucket.sh  # This script will be executed when LocalStack is ready
     networks:
       - resource-network
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"    # Broker (AMQP) port
+      - "15672:15672"  # Management Web UI port (for you to monitor in browser)
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    networks:
+      - rabbitmq-network
 
 networks:
   resource-network:
@@ -116,6 +140,9 @@ networks:
     driver: bridge
   eureka-server-network:
     name: eureka-server
+    driver: bridge
+  rabbitmq-network:
+    name: rabbitmq-network
     driver: bridge
 
 

@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * REST controller for managing MP3 resources.
@@ -27,12 +28,12 @@ public class ResourceController {
     /**
      * Uploads a new MP3 resource.
      *
-     * @param audioData Binary MP3 audio data
+     * @param audioFile The MP3 file to be uploaded
      * @return ResponseEntity with resource ID and 200 OK status
      */
-    @PostMapping(consumes = "audio/mpeg", produces = "application/json")
-    public ResponseEntity<ResourceIdResponseDto> uploadResource(@RequestBody byte[] audioData) {
-        ResourceIdResponseDto resourceId = resourceService.uploadResource(audioData);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResourceIdResponseDto> uploadResource(@RequestParam("audioFile") MultipartFile audioFile) {
+        ResourceIdResponseDto resourceId = resourceService.uploadResource(audioFile);
         return ResponseEntity.status(HttpStatus.OK).body(resourceId);
     }
 
