@@ -55,7 +55,7 @@ class ResourceUploadedEventPublisherIT {
 
     @Container
     @ServiceConnection
-    static RabbitMQContainer rabbitMQ = new RabbitMQContainer("rabbitmq:3-management");
+    static RabbitMQContainer rabbitMQ = new RabbitMQContainer("rabbitmq:4-management");
 
     @Autowired
     private ResourceUploadedEventPublisher publisher;

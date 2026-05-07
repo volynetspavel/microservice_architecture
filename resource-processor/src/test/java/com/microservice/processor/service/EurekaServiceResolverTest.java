@@ -41,7 +41,6 @@ class EurekaServiceResolverTest {
         ServiceInstance first = mock(ServiceInstance.class);
         ServiceInstance second = mock(ServiceInstance.class);
         when(first.getUri()).thenReturn(URI.create("http://song-service:8082"));
-        when(second.getUri()).thenReturn(URI.create("http://song-service:8083"));
         when(discoveryClient.getInstances("song-service")).thenReturn(List.of(first, second));
 
         String result = resolver.resolve("song-service");
