@@ -78,7 +78,7 @@ class ResourceUploadedEventPublisherIT {
         // autoDelete=false is intentional: receive() uses basicConsume/basicCancel internally,
         // which would trigger auto-deletion after the last message is consumed
         testQueueName = "test-spy-" + UUID.randomUUID();
-        Queue queue = new Queue(testQueueName, false, false, false);
+        Queue queue = new Queue(testQueueName, true, false, false);
         amqpAdmin.declareQueue(queue);
         amqpAdmin.declareBinding(new Binding(testQueueName, Binding.DestinationType.QUEUE,
                 EXCHANGE, "#", null));
