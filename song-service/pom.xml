@@ -24,6 +24,7 @@
         <spring-cloud.version>2025.0.1</spring-cloud.version>
         <postgresql.version>42.7.10</postgresql.version>
         <skipITs>true</skipITs>
+        <skipCTs>true</skipCTs>
     </properties>
     <dependencies>
         <dependency>
@@ -98,10 +99,30 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>integration-tests</id>
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
+                        <configuration>
+                            <skipITs>${skipITs}</skipITs>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>component-tests</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <skipITs>${skipCTs}</skipITs>
+                            <includes>
+                                <include>**/*CT.java</include>
+                            </includes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

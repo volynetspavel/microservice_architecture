@@ -3,21 +3,27 @@ mvn spring-boot:run
 rem --view dependency tree
 mvn dependency:tree
 
-rem -- build and run unit tests
+rem -- build and run all tests
 mvn clean install
-rem --run unit tests + integration tests (go to WSL !!)
+
+rem --run unit tests + INTEGRATION tests (go to WSL in project folder!!)
 mvn verify -DskipITs=false
-rem -- Resource Service IT
-rem --run integration test (go to WSL !!)
+rem --run specific IT Resource Service
 mvn test -Dtest=ResourceRepositoryIT
 mvn test -Dtest=CloudStorageServiceIT
 mvn test -Dtest=ResourceUploadedEventPublisherIT
-
 rem -- Resource Processor IT
 mvn test -Dtest=ResourceUploadedConsumerIT
-
 rem -- Song Service IT
 mvn test -Dtest=SongRepositoryIT
+
+rem --run unit tests + COMPONENT tests (go to WSL in project folder!!)
+mvn verify -DskipCTs=false
+
+rem --run any test via shell script, just set test name and service
+./run-integration-test.sh SongControllerComponentIT song-service                               │
+./run-integration-test.sh ProcessorCT resource-processor                                   │
+./run-integration-test.sh ResourceRepositoryIT resource-service
 
 rem --check if ports are in use
 netstat -ano | findstr :8081
