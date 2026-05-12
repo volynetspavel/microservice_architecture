@@ -85,21 +85,90 @@ The strategy follows a **modified testing pyramid** tuned for microservices. Bec
 
 **Tool:** **Spring Cloud Contract** (provider-side generated verifiers + consumer stub JARs)
 
-**Contracts to define:**
 
-| Consumer | Provider | Interface |
-|---|---|---|
-| Resource Service | Song Service | `DELETE /songs?id={csv}` — response body shape and HTTP status |
-| Resource Processor | Resource Service | `GET /resources/{id}` — binary `audio/mpeg` response |
-| Resource Processor | Song Service | `POST /songs` with `SongCreateRequestDto` — `200` with `SongIdResponseDto` |
-| Resource Processor | Resource Service | `ResourceUploadedEvent` RabbitMQ message — field names and types |
+### How it works
 
-**How it works:**
-1. The provider defines contracts as Groovy or YAML DSL files in `src/test/resources/contracts/`.
-2. Spring Cloud Contract generates and runs a `@SpringBootTest`-based verifier on the provider during `mvn verify`.
-3. A stubs JAR is published to the local Maven repository; consumers reference it via `@AutoConfigureStubRunner` in their component tests.
+1. The **provider** defines a contract as a Groovy DSL file in `src/test/resources/contracts/`.
+2. The `spring-cloud-contract-maven-plugin` reads each contract and **generates a JUnit 5 test class** in `target/generated-test-sources/contracts/`. The generated class extends a hand-written base class that sets up the controller mock, and contains one `@Test` per contract that sends the specified request and asserts the specified response.
+3. These generated tests run during the `test` phase (Maven Surefire). If a generated test fails, `mvn verify` fails — the provider's implementation is out of sync with its contract.
+4. The plugin also packages a **stubs JAR** (`*-stubs.jar`) containing WireMock mappings derived from the contracts and installs it to the local Maven repository.
+5. The **consumer** loads the stubs JAR at test time via `@AutoConfigureStubRunner`. This starts WireMock servers pre-loaded with the provider's contract stubs. The consumer's client beans call those WireMock servers, verifying they send requests that the contract stubs recognise.
 
-**Why 10% and not more:** These four contracts cover every cross-service interface. Additional contracts would describe behavior already covered by component and integration tests.
+---
+
+### Contracts implemented
+
+#### Contract 1 — `DELETE /songs?id=1` (song-service is the provider)
+
+**File:** `song-service/src/test/resources/contracts/songs/shouldDeleteSongsAndReturnIds.groovy`
+
+Defines that when resource-service calls `DELETE /songs?id=1`, song-service responds with `200 {"ids":[1]}`.
+
+**Provider verifier** (`song-service`):
+- Generated class: `SongsTest` (extends `SongServiceContractBase`)
+- Base class `SongServiceContractBase` loads a minimal Spring context with only `SongController` + `GlobalExceptionHandler`. `SongService` is mocked with `@MockitoBean`; `deleteSongs("1")` is stubbed to return `DeleteSongsResponseDto([1])`.
+- No database or infrastructure needed — contract tests verify HTTP shape, not business logic.
+
+**Consumer** (`resource-service`):
+- `SongServiceClient.deleteMetadata(Integer id)` calls `DELETE /songs?id={id}` — covered by the provider verifier ensuring the endpoint exists and returns the declared shape. No separate consumer test exists because `deleteMetadata` swallows errors (fire-and-forget), making consumer-side stub assertions meaningless.
+
+---
+
+#### Contract 2 — `GET /resources/1` → `audio/mpeg` binary (resource-service is the provider)
+
+**File:** `resource-service/src/test/resources/contracts/resources/shouldReturnAudioMpegForExistingResource.groovy`
+
+Defines that when resource-processor calls `GET /resources/1`, resource-service responds with `200`, `Content-Type: audio/mpeg`, `Content-Disposition: attachment; filename="resource_1.mp3"`, and binary body matching `test-audio.mp3` (3-byte minimal MP3 header: `0xFF 0xFB 0x00`).
+
+**Provider verifier** (`resource-service`):
+- Generated class: `ResourcesTest` (extends `ResourceServiceHttpContractBase`)
+- Base class uses **no Spring context at all** — `ResourceController` uses constructor injection, so a plain `Mockito.mock(ResourceService.class)` is constructed directly and wired via `RestAssuredMockMvc.standaloneSetup(new ResourceController(mockService))`. `getResourceById("1")` returns `ResourceDataResponseDto` wrapping the 3-byte fixture.
+
+**Consumer** (`resource-processor`):
+- `ResourceProcessorContractTest.getResource_requestMatchesResourceServiceContract()` — loads the resource-service stubs JAR (WireMock on port 8091), points `DiscoveryClient` mock at that port, calls `ResourceServiceClient.getResource(1)`, and asserts the returned `byte[]` is non-empty.
+
+---
+
+#### Contract 3 — `POST /songs` with `SongCreateRequestDto` (song-service is the provider)
+
+**File:** `song-service/src/test/resources/contracts/songs/shouldCreateSongAndReturnId.groovy`
+
+Defines that when resource-processor posts a valid `SongCreateRequestDto` to `POST /songs`, song-service responds with `200 {"id": <integer>}`. The request body matchers use regexes (`[1-9][0-9]*` for id, `.{1,100}` for string fields, `\d{2}:[0-5]\d` for duration, `\d{4}` for year) so the stub matches any valid DTO, not just the hard-coded fixture values.
+
+**Provider verifier** (`song-service`):
+- Generated class: `SongsTest` (extends `SongServiceContractBase`, same base as Contract 1)
+- `SongService.createSong(dto)` is stubbed to return `SongIdResponseDto(5)` when `dto.id == 5`.
+
+**Consumer** (`resource-processor`):
+- `ResourceProcessorContractTest.sendMetadata_requestMatchesSongServiceContract()` — loads the song-service stubs JAR (WireMock on port 8090), points `DiscoveryClient` mock at that port, calls `SongServiceClient.sendMetadata(dto)` with a DTO whose fields satisfy the contract's regex matchers. WireMock rejects the request with 404 if the body does not match, causing the `RestClient` to throw.
+
+---
+
+#### Contract 4 — `ResourceUploadedEvent` RabbitMQ message (resource-service is the provider)
+
+**File:** `resource-service/src/test/resources/contracts/messaging/shouldPublishResourceUploadedEvent.groovy`
+
+Defines that resource-service publishes a message to the `resource-uploaded` exchange with body `{"resourceId": <positive integer>}` and `contentType: application/json`. The `triggeredBy("publishResourceUploadedEvent()")` DSL tells the generated test which method on the base class fires the message.
+
+**Provider verifier** (`resource-service`):
+- Generated class: `MessagingTest` (extends `ResourceServiceMessagingContractBase`)
+- Base class loads a minimal context — only `ResourceUploadedEventPublisher` via `@Configuration @Import(ResourceUploadedEventPublisher.class)`. `StreamBridge` is provided by the **Spring Cloud Stream test binder** (`spring-cloud-stream-test-binder`) instead of real RabbitMQ. `@AutoConfigureMessageVerifier` wires an in-memory `MessageVerifier` that intercepts messages sent through `StreamBridge`. No broker needed.
+- The generated test calls `publishResourceUploadedEvent()` → `publisher.publish(1)` → `StreamBridge.send("resource-uploaded-out-0", ResourceUploadedEvent(1))`. The in-memory verifier captures the message and asserts its body and headers match the contract.
+
+**Consumer** (`resource-processor`):
+- `ResourceUploadedEventContractTest.resourceUploadedEvent_consumerCanDeserialize()` — loads the resource-service stubs JAR, uses `StubTrigger` to fire the messaging contract, and uses `MessageVerifierReceiver` to receive the message from the in-memory test binder channel `resource-uploaded`. Asserts the message payload is non-null, confirming the consumer can receive and parse the event shape the provider declares.
+
+---
+
+### Provider base class design decisions
+
+| Provider | Base class | Context strategy | Why |
+|---|---|---|---|
+| song-service | `SongServiceContractBase` | `@SpringBootTest(classes={SongController, GlobalExceptionHandler})` + `@MockitoBean SongService` | `SongController` uses `@Autowired` field injection — must be wired by Spring |
+| resource-service (HTTP) | `ResourceServiceHttpContractBase` | No Spring context — pure `RestAssuredMockMvc.standaloneSetup(new ResourceController(mock))` | `ResourceController` uses constructor injection — no Spring needed |
+| resource-service (messaging) | `ResourceServiceMessagingContractBase` | `@SpringBootTest(classes=TestConfig)` with `@Configuration @Import(ResourceUploadedEventPublisher)` + test binder | Only `StreamBridge` needed; minimal context avoids pulling in S3/JPA/RabbitMQ |
+
+**Why 10% and not more:** These four contracts cover every cross-service HTTP and messaging interface. Additional contracts would duplicate assertions already present in component and integration tests.
 
 ---
 

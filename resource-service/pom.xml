@@ -27,6 +27,8 @@
         <apache.httpclient.version>4.5.14</apache.httpclient.version>
         <skipITs>true</skipITs>
         <skipCTs>true</skipCTs>
+        <skipContracts>true</skipContracts>
+        <spring-cloud-contract.version>4.2.1</spring-cloud-contract.version>
     </properties>
     <dependencies>
         <dependency>
@@ -63,6 +65,21 @@
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock-standalone</artifactId>
             <version>3.10.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-contract-verifier</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-contract-stub-runner</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream-test-binder</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -155,7 +172,39 @@
                             </includes>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>contract-tests</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <skipITs>${skipContracts}</skipITs>
+                            <includes>
+                                <include>**/*ContractTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-contract-maven-plugin</artifactId>
+                <version>${spring-cloud-contract.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <skip>${skipContracts}</skip>
+                    <baseClassMappings>
+                        <baseClassMapping>
+                            <contractPackageRegex>.*resources.*</contractPackageRegex>
+                            <baseClassFQN>com.microservice.resource.contract.ResourceServiceHttpContractBase</baseClassFQN>
+                        </baseClassMapping>
+                        <baseClassMapping>
+                            <contractPackageRegex>.*messaging.*</contractPackageRegex>
+                            <baseClassFQN>com.microservice.resource.contract.ResourceServiceMessagingContractBase</baseClassFQN>
+                        </baseClassMapping>
+                    </baseClassMappings>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
