@@ -22,9 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Requires the full Docker Compose stack to be running before execution.
  * Use run-e2e-test.sh to start the stack and run these tests.
  */
-class ResourceServiceE2EIT {
+class ResourceServiceE2E {
 
-    private static final Logger log = LoggerFactory.getLogger(ResourceServiceE2EIT.class);
+    private static final Logger log = LoggerFactory.getLogger(ResourceServiceE2E.class);
 
     private static final String RESOURCE_SERVICE = "http://localhost:8081";
     private static final String SONG_SERVICE = "http://localhost:8082";

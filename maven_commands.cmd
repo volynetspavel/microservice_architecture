@@ -24,7 +24,7 @@ rem --run unit tests + CONTRACT tests (go to WSL in project folder!!)
 mvn verify -DskipContracts=false
 
 rem --run E2E test
-mvn -f resource-service/pom.xml verify -Dit.test="ResourceServiceE2EIT" --no-transfer-progress
+mvn -f resource-service/pom.xml test -Dtest="ResourceServiceE2E" --no-transfer-progress
 
 rem --run any test via shell script, just set test name and service
 ./run-integration-test.sh SongControllerComponentIT song-service                               │

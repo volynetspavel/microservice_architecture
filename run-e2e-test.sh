@@ -69,6 +69,8 @@ echo ""
 echo "Starting Docker Compose stack..."
 cd "$SCRIPT_DIR"
 docker compose up -d --build
+echo "Waiting 30s for containers to initialise..."
+sleep 30
 
 # --- 5. Register cleanup trap ---
 trap 'echo ""; echo "Stopping Docker Compose stack..."; docker compose down' EXIT
@@ -77,7 +79,7 @@ trap 'echo ""; echo "Stopping Docker Compose stack..."; docker compose down' EXI
 wait_for_service() {
     local url=$1
     local name=$2
-    local max_retries=30
+    local max_retries=60
     local attempt=0
     echo "Waiting for $name..."
     while [ $attempt -lt $max_retries ]; do
@@ -105,6 +107,6 @@ wait_for_service "http://localhost:8084/"            "Resource Processor  (8084)
 echo ""
 echo "All services are up. Running E2E tests..."
 cd "$SCRIPT_DIR/resource-service"
-"$MVN" verify \
-    -Dit.test="ResourceServiceE2EIT" \
+"$MVN" test \
+    -Dtest="ResourceServiceE2E" \
     --no-transfer-progress

@@ -176,7 +176,8 @@ Defines that resource-service publishes a message to the `resource-uploaded` exc
 
 **Goal:** Smoke-test the fully assembled system on the three core business flows. Runs against the real `compose.yaml` environment.
 
-**E2E approach:** Run script run-e2e-test.sh which is running docker containers from compose.yaml and then triggering ResourceServiceE2E.java from Resource Service.
+**E2E approach:** Run script **run-e2e-test.sh** which is running docker containers from compose.yaml 
+and then triggering **ResourceServiceE2E.java** from Resource Service.
 
 **Flows to cover:**
 
