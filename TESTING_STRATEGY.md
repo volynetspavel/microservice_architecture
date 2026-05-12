@@ -176,7 +176,7 @@ Defines that resource-service publishes a message to the `resource-uploaded` exc
 
 **Goal:** Smoke-test the fully assembled system on the three core business flows. Runs against the real `compose.yaml` environment.
 
-**Tools:** REST Assured (or `RestTemplate`) in a dedicated `e2e-tests` Maven module
+**E2E approach:** Run script run-e2e-test.sh which is running docker containers from compose.yaml and then triggering ResourceServiceE2E.java from Resource Service.
 
 **Flows to cover:**
 
