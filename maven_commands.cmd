@@ -43,9 +43,3 @@ http://localhost:8761/
 
 rem LocalStack dashboard
 https://app.localstack.cloud/inst/default/overview
-
-npm install -g @codemieai/code
-codemie setup
-codemie doctor
-codemie install claude --supported
-codemie-claude --task "Suggest a plan how to create E2E test. Check TESTING_STRATEGY.md file and lets create a plan according to point 5. Just suggest a plan how ro create E2E test, do not do changes. Avoid creating additional projects, E2E test has to be like script which running docker containers and then call some java test which can be create in resource-service project"
