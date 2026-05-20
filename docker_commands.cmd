@@ -12,7 +12,7 @@ rem --build and run containers from compose.yaml and run 2 song-service containe
 docker compose up -d --build --scale song-service=2
 rem --run specific services from compose.yaml
 docker compose up -d resource-db song-db
-docker compose up -d resource-db song-db eureka-server
+docker compose up -d resource-db song-db eureka-server localstack rabbitmq
 docker compose up -d eureka-server
 rem just containers for resource-service
 docker compose up -d resource-db
