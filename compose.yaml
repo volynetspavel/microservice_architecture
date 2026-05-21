@@ -187,6 +187,28 @@ services:
       timeout: 5s
       retries: 5
 
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    image: api-gateway:1.0
+    ports:
+      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+    environment:
+      SERVER_PORT: ${API_GATEWAY_PORT}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+    networks:
+      - eureka-server-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:${API_GATEWAY_PORT}/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
 networks:
   resource-network:
     name: resource-network
