@@ -53,6 +53,7 @@ services:
       RABBITMQ_SERVER_URL: ${RABBITMQ_SERVER_URL}
       RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:-true}
     networks:
       - resource-network
       - resource-song-network
@@ -89,6 +90,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${SONG_DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${SONG_DATASOURCE_PASSWORD}
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:-true}
     networks:
       - song-network
       - resource-song-network
@@ -116,6 +118,7 @@ services:
       RABBITMQ_SERVER_URL: ${RABBITMQ_SERVER_URL}
       RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:-true}
     networks:
       - resource-song-network
       - rabbitmq-network
@@ -186,6 +189,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   api-gateway:
     build:
