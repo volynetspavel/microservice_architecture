@@ -35,6 +35,30 @@ services:
       timeout: 5s
       retries: 5
 
+  config-server:
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    image: config-server:1.0
+    ports:
+      - "${CONFIG_SERVER_PORT}:${CONFIG_SERVER_PORT}"
+    environment:
+      SERVER_PORT: ${CONFIG_SERVER_PORT}
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:-true}
+      CONFIG_REPO_URI: ${CONFIG_REPO_URI}
+    networks:
+      - eureka-server-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:${CONFIG_SERVER_PORT}/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   resource-service:
     build:
       context: ./resource-service
@@ -54,6 +78,7 @@ services:
       RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:-true}
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
     networks:
       - resource-network
       - resource-song-network
@@ -74,6 +99,8 @@ services:
         condition: service_healthy
       resource-processor:
         condition: service_healthy
+      config-server:
+        condition: service_healthy
 
   song-service:
     build:
@@ -91,12 +118,15 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SONG_DATASOURCE_PASSWORD}
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:-true}
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
     networks:
       - song-network
       - resource-song-network
       - eureka-server-network
     depends_on:
       song-db:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:${SONG_SERVICE_PORT}/actuator/health"]
@@ -119,6 +149,7 @@ services:
       RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:-true}
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
     networks:
       - resource-song-network
       - rabbitmq-network
@@ -129,6 +160,8 @@ services:
       eureka-server:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:${RESOURCE_PROCESSOR_PORT}/actuator/health"]
@@ -201,6 +234,7 @@ services:
     environment:
       SERVER_PORT: ${API_GATEWAY_PORT}
       EUREKA_SERVER_URL: ${EUREKA_SERVER_URL}
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
     networks:
       - eureka-server-network
     healthcheck:
@@ -211,6 +245,8 @@ services:
       start_period: 30s
     depends_on:
       eureka-server:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
 
 networks:
