@@ -8,11 +8,12 @@ rem --run containers from compose.yaml
 docker compose up -d
 rem --build and run containers from compose.yaml
 docker compose up -d --build
+docker compose up -d --build localstack
 rem --build and run containers from compose.yaml and run 2 song-service containers
 docker compose up -d --build --scale song-service=2
 rem --run specific services from compose.yaml
 docker compose up -d resource-db song-db
-docker compose up -d resource-db song-db eureka-server localstack rabbitmq
+docker compose up -d resource-db song-db eureka-server localstack rabbitmq api-gateway
 docker compose up -d eureka-server
 rem just containers for resource-service
 docker compose up -d resource-db
@@ -20,6 +21,7 @@ docker compose up -d song-service
 docker compose up -d resource-processor
 docker compose up -d localstack
 docker compose up -d rabbitmq
+docker compose up -d api-gateway
 rem you can run only resource-service and it will trigger dependency services to run as well
 docker compose up -d resource-service
 
@@ -56,6 +58,8 @@ docker stop song-service
 
 rem --Before running the application in Docker, stop any previously running containers
 docker compose down
+rem --The -v flag removes all anonymous volumes declared in compose.yaml
+docker compose down -v
 
 rem --remove unused images, -a flag removes all images without at least one container associated to them
 docker image prune -a
